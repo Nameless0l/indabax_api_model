@@ -66,8 +66,9 @@ app.add_middleware(
 )
 
 # Chemins vers les fichiers de modèle et statistiques
-MODEL_PATH = "./model/eligibility_model_gradient_boosting_20250323_104955.pkl"
-MODEL_INFO_PATH = "./model/model_info_20250323_104955.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "model", "eligibility_model_gradient_boosting_20250323_104955.pkl")
+MODEL_INFO_PATH = os.path.join(BASE_DIR, "model", "model_info_20250323_104955.json")
 
 # Classes pour les entrées et sorties
 class Genre(str, Enum):
@@ -229,6 +230,21 @@ def load_model():
     global model, required_columns, feature_stats
     
     try:
+        # Vérifier si les chemins existent
+        if not os.path.exists(MODEL_PATH):
+            print(f"Avertissement: Modèle non trouvé à: {MODEL_PATH}")
+            print(f"Répertoire actuel: {os.getcwd()}")
+            print(f"Contenu du répertoire: {os.listdir(os.getcwd())}")
+            if os.path.exists(os.path.dirname(MODEL_PATH)):
+                print(f"Contenu du répertoire model: {os.listdir(os.path.dirname(MODEL_PATH))}")
+            
+            # Fallback: essayer de trouver le modèle avec un pattern
+            import glob
+            model_files = glob.glob(os.path.join(BASE_DIR, "model", "*.pkl"))
+            if model_files:
+                print(f"Modèles disponibles: {model_files}")
+                MODEL_PATH = model_files[0]
+                print(f"Utilisation du modèle: {MODEL_PATH}")
         # Charger le modèle
         if os.path.exists(MODEL_PATH):
             model = joblib.load(MODEL_PATH)
@@ -558,4 +574,5 @@ app.openapi = custom_openapi
 # Lancement de l'application
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
